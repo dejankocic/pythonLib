@@ -17,7 +17,6 @@ def find_log_files_and_count_loggers(start_path):
     logger_pattern = re.compile(
         r'^\\w+\\s+\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\[\\w+\\]: ([^ ]+) - .+$')
     loggers = {}
-    # Add 'utf-16-le' and 'utf-16-be' to the list of encodings to try
     encodings = ['utf-8', 'utf-16', 'utf-16-le', 'utf-16-be', 'cp1252']
 
     for root, dirs, files in os.walk(start_path):
@@ -34,22 +33,25 @@ def find_log_files_and_count_loggers(start_path):
                                         loggers[logger] += 1
                                     else:
                                         loggers[logger] = 1
-                        # If the file is successfully read, break out of the encoding loop
                         break
                     except UnicodeDecodeError:
-                        # If an error occurs, try the next encoding
                         continue
     return loggers
 
 
 def main():
-    current_dir = os.getcwd()
-    zip_files = [file for file in os.listdir(current_dir) if file.endswith('.zip')]
+    # Prompt the user to enter the directory path
+    log_directory = input("Enter the full path of the directory to check logs: ")
+    if not os.path.isdir(log_directory):
+        print("The provided directory does not exist. Please check the path and try again.")
+        sys.exit(1)
+
+    zip_files = [file for file in os.listdir(log_directory) if file.endswith('.zip')]
 
     for zip_file in zip_files:
         print(f"Processing {zip_file}...")
-        temp_dir = tempfile.mkdtemp(dir=current_dir)
-        unpack_zip(zip_file, temp_dir)
+        temp_dir = tempfile.mkdtemp(dir=log_directory)
+        unpack_zip(os.path.join(log_directory, zip_file), temp_dir)
         loggers = find_log_files_and_count_loggers(temp_dir)
 
         print("Temporary directory created at:", temp_dir)
@@ -58,7 +60,7 @@ def main():
             print(f"{logger}: {count}")
 
         print("Press Enter to continue to the next file.")
-        input()  # Wait for user input before continuing
+        input()
 
 
 if __name__ == "__main__":
