@@ -4,7 +4,6 @@ import zipfile
 import tempfile
 import sys
 
-
 def unpack_zip(file_path, extract_to):
     with zipfile.ZipFile(file_path, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
@@ -12,10 +11,23 @@ def unpack_zip(file_path, extract_to):
             if file.endswith('.zip'):
                 unpack_zip(os.path.join(extract_to, file), extract_to)
 
-
 def find_log_files_and_count_loggers(start_path):
-    # Adjusted logger pattern to match the provided log format
-    logger_pattern = re.compile(r'%-5p %d{yyyy-MM-dd %H:mm:ss.fff} \[%t\]: (%c) - %m%n')
+    #logger pattern to match the provided log format
+    #(?P<LogLevel>\w+): Matches the log level and names the group “LogLevel”.
+    #\s+: Matches one or more whitespace characters.
+    #(?P<Timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}): Matches the timestamp and names the group “Timestamp”.
+    #\s+\[: Matches one or more whitespace characters followed by an opening square bracket.
+    #(?P<Thread>[^\]]+): Matches the thread and names the group “Thread”, stopping at the closing square bracket.
+    #\]:\s: Matches the closing square bracket followed by a whitespace character.
+    #(?P<Logger>[^\s]+): Matches the logger and names the group “Logger”, stopping at the next whitespace.
+    #\s-\s: Matches the whitespace, a hyphen, and another whitespace.
+    #(?P<Message>.+): Matches the message and names the group “Message”, continuing to the end of the line.
+
+    logger_pattern = re.compile(
+        r'(?P<LogLevel>\w+)\s+(?P<Timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?P<Thread>[^\]]+)\]:\s(?P<Logger>[^\s]+)\s-\s(?P<Message>.+)')
+
+    #logger_pattern = re.compile(r'%-5p %d{yyyy-MM-dd %H:mm:ss.fff} \[%t\]: (%c) - %m%n')
+
     loggers = {}
     encodings = ['utf-8', 'utf-16-le', 'utf-16-be', 'cp1252']
 
@@ -57,7 +69,6 @@ def main():
 
         print("Press Enter to continue to the next file.")
         input()
-
 
 if __name__ == "__main__":
     main()
