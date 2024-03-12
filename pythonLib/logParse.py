@@ -14,9 +14,9 @@ def unpack_zip(file_path, extract_to):
 
 
 def find_log_files_and_count_loggers(start_path):
-    logger_pattern = re.compile(r'^\\w+\\s+\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\[\\w+\\]: ([^ ]+) - .+$')
+    # Adjusted logger pattern to match the provided log format
+    logger_pattern = re.compile(r'%-5p %d{yyyy-MM-dd %H:mm:ss.fff} \[%t\]: (%c) - %m%n')
     loggers = {}
-    # Add 'utf-16-le' and 'utf-16-be' to the list of encodings to try
     encodings = ['utf-8', 'utf-16-le', 'utf-16-be', 'cp1252']
 
     for root, dirs, files in os.walk(start_path):
@@ -26,22 +26,17 @@ def find_log_files_and_count_loggers(start_path):
                     try:
                         with open(os.path.join(root, file), 'r', encoding=encoding) as log_file:
                             for line in log_file:
-                                match = logger_pattern.match(line)
+                                match = logger_pattern.search(line)
                                 if match:
                                     logger = match.group(1)
-                                    if logger in loggers:
-                                        loggers[logger] += 1
-                                    else:
-                                        loggers[logger] = 1
-                        # If the file is successfully read, break out of the encoding loop
+                                    loggers[logger] = loggers.get(logger, 0) + 1
                         break
                     except UnicodeDecodeError:
-                        # If an error occurs, try the next encoding
                         continue
     return loggers
 
+
 def main():
-    # Prompt the user to enter the directory path
     log_directory = input("Enter the full path of the directory to check logs: ")
     if not os.path.isdir(log_directory):
         print("The provided directory does not exist. Please check the path and try again.")
