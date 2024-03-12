@@ -4,6 +4,7 @@ import zipfile
 import tempfile
 import sys
 from collections import defaultdict
+import shutil
 
 def unpack_zip(file_path, extract_to):
     with zipfile.ZipFile(file_path, 'r') as zip_ref:
@@ -12,11 +13,11 @@ def unpack_zip(file_path, extract_to):
             if file.endswith('.zip'):
                 unpack_zip(os.path.join(extract_to, file), extract_to)
 
-def find_log_files_and_count_loggers(start_path):
+def find_log_files_and_count(start_path, count_option):
     logger_pattern = re.compile(
         r'(?P<LogLevel>\w+)\s+(?P<Timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?P<Thread>[^\]]+)\]:\s(?P<Logger>[^\s]+)\s-\s(?P<Message>.+)')
 
-    loggers = defaultdict(int)
+    counts = defaultdict(int)
     encodings = ['utf-8', 'utf-16-le', 'utf-16-be', 'cp1252']
 
     for root, dirs, files in os.walk(start_path):
@@ -28,12 +29,17 @@ def find_log_files_and_count_loggers(start_path):
                             for line in log_file:
                                 match = logger_pattern.search(line)
                                 if match:
-                                    logger = match.group('Logger')
-                                    loggers[logger] += 1
+                                    if count_option == 1:
+                                        key = match.group('LogLevel')
+                                    elif count_option == 2:
+                                        key = match.group('Logger')
+                                    elif count_option == 3:
+                                        key = match.group('Message')
+                                    counts[key] += 1
                         break
                     except UnicodeDecodeError:
                         continue
-    return loggers
+    return counts
 
 def main():
     log_directory = input("Enter the full path of the directory to check logs: ")
@@ -41,22 +47,29 @@ def main():
         print("The provided directory does not exist. Please check the path and try again.")
         sys.exit(1)
 
+    print("Select what to count:")
+    print("1: Log Levels")
+    print("2: Loggers")
+    print("3: Messages")
+    count_option = int(input("Enter your selection (1, 2, or 3): "))
+
     zip_files = [file for file in os.listdir(log_directory) if file.endswith('.zip')]
-    all_loggers = defaultdict(int)
+    all_counts = defaultdict(int)
 
     for zip_file in zip_files:
         print(f"Processing {zip_file}...")
         temp_dir = tempfile.mkdtemp(dir=log_directory)
         unpack_zip(os.path.join(log_directory, zip_file), temp_dir)
-        loggers = find_log_files_and_count_loggers(temp_dir)
-        for logger, count in loggers.items():
-            all_loggers[logger] += count
+        counts = find_log_files_and_count(temp_dir, count_option)
+        for key, count in counts.items():
+            all_counts[key] += count
+        shutil.rmtree(temp_dir)  # Delete the temporary directory after processing
 
-    with open('summary_results.txt', 'w') as f:
-        for logger, count in sorted(all_loggers.items(), key=lambda item: item[1], reverse=True):
-            f.write(f"{logger}: {count}\n")
+    with open('summary_results.txt', 'w', encoding='utf-8') as f:
+        for key, count in sorted(all_counts.items(), key=lambda item: item[1], reverse=True):
+            f.write(f"{key}: {count}\n")
 
-    print("Summary of found loggers has been written to 'summary_results.txt'.")
+    print("Summary has been written to 'summary_results.txt'.")
 
 if __name__ == "__main__":
     main()
