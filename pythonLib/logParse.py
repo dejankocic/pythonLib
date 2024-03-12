@@ -14,10 +14,10 @@ def unpack_zip(file_path, extract_to):
 
 
 def find_log_files_and_count_loggers(start_path):
-    logger_pattern = re.compile(
-        r'^\\w+\\s+\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\[\\w+\\]: ([^ ]+) - .+$')
+    logger_pattern = re.compile(r'^\\w+\\s+\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\[\\w+\\]: ([^ ]+) - .+$')
     loggers = {}
-    encodings = ['utf-8', 'utf-16', 'utf-16-le', 'utf-16-be', 'cp1252']
+    # Add 'utf-16-le' and 'utf-16-be' to the list of encodings to try
+    encodings = ['utf-8', 'utf-16-le', 'utf-16-be', 'cp1252']
 
     for root, dirs, files in os.walk(start_path):
         for file in files:
@@ -33,11 +33,12 @@ def find_log_files_and_count_loggers(start_path):
                                         loggers[logger] += 1
                                     else:
                                         loggers[logger] = 1
+                        # If the file is successfully read, break out of the encoding loop
                         break
                     except UnicodeDecodeError:
+                        # If an error occurs, try the next encoding
                         continue
     return loggers
-
 
 def main():
     # Prompt the user to enter the directory path
