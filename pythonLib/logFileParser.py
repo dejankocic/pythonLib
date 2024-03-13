@@ -1,3 +1,6 @@
+#This is a sample script for checking the reg exp. In general should be ignored (no value).
+#
+
 import re
 
 log_pattern = re.compile(r'(?P<LogLevel>\w+)\s+(?P<Timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?P<Thread>[^\]]+)\]:\s(?P<Logger>[^\s]+)\s-\s(?P<Message>.+)')

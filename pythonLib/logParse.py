@@ -1,3 +1,6 @@
+#The script for a given directory iterates in archives and searches for .log files,
+# so it counts what has been selected (loggers, log levels, messages).
+
 import os
 import re
 import zipfile
